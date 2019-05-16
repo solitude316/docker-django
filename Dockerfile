@@ -1,9 +1,11 @@
 FROM ubuntu:latest
 RUN apt-get update
-RUN apt-get install -y curl python3 python3-dev python3-distutils nginx vim telnet net-tools build-essential
+RUN apt-get install -y curl python3 python3-dev python3-distutils nginx vim telnet net-tools build-essential \
+	postgresql-client postgresql-server-dev-10 
+RUN ln -s /usr/bin/python3 /usr/bin/python
 
 #install pip
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3 -
+RUN curl https://bootstrap.pypa.io/get-pip.py | python -
 RUN pip install uwsgi
 RUN pip install virtualenv
 RUN pip install django
@@ -12,14 +14,14 @@ RUN pip install django
 RUN django-admin.py startproject mysite /var/www/html
 
 RUN echo 'STATIC_ROOT = os.path.join(BASE_DIR, "static/")' >> /var/www/html/mysite/settings.py
-RUN python3 /var/www/html/manage.py collectstatic
+RUN python /var/www/html/manage.py collectstatic
 
 # create virtualenv
 
+COPY ./configs/requirement.txt /tmp/
 RUN mkdir -p /var/venv/django
 RUN virtualenv /var/venv/django
-
-RUN /bin/bash -c "source /var/venv/django/bin/activate && pip install django"
+RUN /bin/bash -c "source /var/venv/django/bin/activate && pip install -r /tmp/requirement.txt"
 
 RUN mkdir -p /etc/uwsgi/vassals
 COPY ./configs/mysite_uwsgi.ini /etc/uwsgi/vassals/
